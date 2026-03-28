@@ -67,7 +67,6 @@ DEFAULT_JOB_TITLES = [
     "network engineer",
     "network administrator",
     "systems administrator",
-    "infrastructure engineer",
     "help desk",
     "desktop support",
     "technical support",
