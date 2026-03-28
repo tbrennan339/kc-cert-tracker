@@ -3,7 +3,9 @@ name = "kc-cert-tracker"
 version = "0.1.0"
 description = "Track IT certification demand in Kansas City job postings"
 requires-python = ">=3.11"
-dependencies = []
+dependencies = [
+    "requests", 
+]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

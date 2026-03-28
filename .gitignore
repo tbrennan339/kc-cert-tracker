@@ -58,6 +58,10 @@ cover/
 # PyCharm Stuff:
 .idea/
 
+# Local data/cache
+**/cache/
+data/
+
 # Django stuff:
 *.log
 local_settings.py
