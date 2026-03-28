@@ -61,6 +61,7 @@ cover/
 # Local data/cache
 **/cache/
 data/
+scripts/test_*.py
 
 # Django stuff:
 *.log
