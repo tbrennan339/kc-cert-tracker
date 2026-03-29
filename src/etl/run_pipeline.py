@@ -6,6 +6,7 @@ import json
 import logging
 import os
 
+from src.etl.loaders.gold import aggregate_certs, load_to_postgres
 from src.etl.transformers.cert_extractor import extract_certs
 
 logging.basicConfig(
@@ -26,6 +27,7 @@ silver_layer = project_root / "data" / "silver"
 silver_layer.mkdir(parents=True, exist_ok=True)
 
 api_key = os.getenv("THEIRSTACK_API_KEY")
+connection_string = os.getenv("DATABASE_URL")
 
 today = datetime.date.today()
 
@@ -41,7 +43,11 @@ if __name__ == "__main__":
         jobs_with_certs = extract_certs(jobs)
         with open(silver_layer / f"{today}.json", "w") as f:
             json.dump(jobs_with_certs, f, indent=2)
-        logger.info(f"Saved {len(jobs)} jobs to silver/{today}.json")
+        logger.info(f"Saved {len(jobs_with_certs)} jobs to silver/{today}.json")
+
+        # Load
+        aggregate_data = aggregate_certs(jobs_with_certs)
+        load_to_postgres(aggregate_data, connection_string)
 
     except Exception as e:
         logger.error(f"Pipeline failed: {e}")
