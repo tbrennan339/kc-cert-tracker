@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>KC Cert Tracker</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;600&family=IBM+Plex+Sans:wght@300;500;700&display=swap');
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: 'IBM Plex Sans', sans-serif;
+            background: #0a0e17;
+            color: #e0e4ec;
+            min-height: 100vh;
+            padding: 3rem 2rem;
+        }
+
+        .container { max-width: 960px; margin: 0 auto; }
+
+        h1 {
+            font-family: 'IBM Plex Mono', monospace;
+            font-size: 1.8rem;
+            font-weight: 600;
+            color: #58a6ff;
+            margin-bottom: 0.25rem;
+        }
+
+        .subtitle {
+            font-size: 0.95rem;
+            color: #6b7280;
+            margin-bottom: 2.5rem;
+            font-weight: 300;
+        }
+
+        .chart-wrapper {
+            background: #111827;
+            border: 1px solid #1e293b;
+            border-radius: 12px;
+            padding: 2rem;
+        }
+
+        .loading {
+            text-align: center;
+            color: #6b7280;
+            padding: 2rem;
+            font-family: 'IBM Plex Mono', monospace;
+        }
+
+        .error {
+            text-align: center;
+            color: #f87171;
+            padding: 2rem;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>KC Metro Cert Demand</h1>
+        <p class="subtitle" id="subtitle">Loading...</p>
+        <div class="chart-wrapper">
+            <div class="loading" id="loading">Fetching cert data...</div>
+            <canvas id="certChart" style="display: none;"></canvas>
+        </div>
+    </div>
+
+    <script>
+        fetch('/certs')
+            .then(response => {
+                if (!response.ok) throw new Error(`HTTP ${response.status}`);
+                return response.json();
+            })
+            .then(data => {
+                document.getElementById('loading').style.display = 'none';
+                document.getElementById('certChart').style.display = 'block';
+
+                const labels = data.map(row => row.cert_name);
+                const counts = data.map(row => row.job_count);
+                const date = data.length > 0 ? data[0].date : 'No data';
+
+                document.getElementById('subtitle').textContent =
+                    `${date} — Certifications mentioned in job postings`;
+
+                new Chart(document.getElementById('certChart'), {
+                    type: 'bar',
+                    data: {
+                        labels: labels,
+                        datasets: [{
+                            label: 'Job Postings',
+                            data: counts,
+                            backgroundColor: '#58a6ff',
+                            borderRadius: 4,
+                            barThickness: 28,
+                        }]
+                    },
+                    options: {
+                        indexAxis: 'y',
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: { legend: { display: false } },
+                        scales: {
+                            x: {
+                                ticks: { color: '#6b7280', font: { family: 'IBM Plex Mono' }, stepSize: 1 },
+                                grid: { color: '#1e293b' },
+                            },
+                            y: {
+                                ticks: { color: '#e0e4ec', font: { family: 'IBM Plex Mono', size: 13 } },
+                                grid: { display: false },
+                            }
+                        }
+                    }
+                });
+            })
+            .catch(error => {
+                document.getElementById('loading').innerHTML =
+                    `<span class="error">Failed to load data: ${error.message}</span>`;
+                console.error('Failed to fetch certs:', error);
+            });
+    </script>
+</body>
+</html>
