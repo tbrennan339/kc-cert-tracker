@@ -114,6 +114,7 @@ def extract_jobs(api_key: str, limit: int = 25) -> list[dict]:
         "page": 0,
         "limit": limit,
         "posted_at_gte": yesterday.isoformat(),
+        "posted_at_lte": yesterday.isoformat(),
         "blur_company_data": False,
         "include_total_results": False,
         "job_title_or": DEFAULT_JOB_TITLES,
