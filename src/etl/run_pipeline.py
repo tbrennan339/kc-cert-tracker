@@ -1,13 +1,13 @@
+import boto3
+
 from src.etl.extractors.theirstack import extract_jobs
-from dotenv import load_dotenv
-from pathlib import Path
 import datetime
-import json
 import logging
-import os
 
 from src.etl.loaders.gold import aggregate_certs, load_to_postgres
+from src.etl.loaders.storage import save_to_r2
 from src.etl.transformers.cert_extractor import extract_certs
+from src.config import Config
 
 logging.basicConfig(
     level=logging.INFO,
@@ -16,34 +16,28 @@ logging.basicConfig(
 
 logger = logging.getLogger(__name__)
 
-project_root = Path(__file__).resolve().parents[2]
-env_path = project_root / "infrastructure" / "docker" / ".env"
-load_dotenv(env_path)
+r2_bucket = Config.R2_BUCKET_NAME
+s3_client = boto3.client(
+    "s3",
+    endpoint_url=Config.R2_ENDPOINT_URL,
+    aws_access_key_id=Config.R2_ACCESS_KEY_ID,
+    aws_secret_access_key=Config.R2_SECRET_ACCESS_KEY,
+)
 
-bronze_layer = project_root / "data" / "bronze"
-bronze_layer.mkdir(parents=True, exist_ok=True)
+api_key = Config.THEIRSTACK_API_KEY
+connection_string = Config.DATABASE_URL
 
-silver_layer = project_root / "data" / "silver"
-silver_layer.mkdir(parents=True, exist_ok=True)
-
-api_key = os.getenv("THEIRSTACK_API_KEY")
-connection_string = os.getenv("DATABASE_URL")
-
-today = datetime.date.today()
+yesterday = datetime.date.today() - datetime.timedelta(days=1)
 
 if __name__ == "__main__":
     try:
         # Extract
-        jobs = extract_jobs(api_key, 10)
-        with open(bronze_layer / f"{today}.json", "w") as f:
-            json.dump(jobs, f, indent=2)
-        logger.info(f"Saved {len(jobs)} jobs to bronze/{today}.json")
+        jobs = extract_jobs(api_key, 25)
+        save_to_r2(jobs, str(yesterday), s3_client, r2_bucket, "bronze")
 
         # Transform
         jobs_with_certs = extract_certs(jobs)
-        with open(silver_layer / f"{today}.json", "w") as f:
-            json.dump(jobs_with_certs, f, indent=2)
-        logger.info(f"Saved {len(jobs_with_certs)} jobs to silver/{today}.json")
+        save_to_r2(jobs_with_certs, str(yesterday), s3_client, r2_bucket, "silver")
 
         # Load
         aggregate_data = aggregate_certs(jobs_with_certs)

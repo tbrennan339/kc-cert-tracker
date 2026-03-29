@@ -4,17 +4,12 @@ from fastapi.responses import HTMLResponse
 from fastapi.templating import Jinja2Templates
 from starlette.requests import Request
 import psycopg2
-import os
-from dotenv import load_dotenv
-
-project_root = pathlib.Path(__file__).resolve().parents[2]
-env_path = project_root / "infrastructure" / "docker" / ".env"
-load_dotenv(env_path)
+from src.config import Config
 app = FastAPI()
 templates = Jinja2Templates(directory=pathlib.Path(__file__).resolve().parent / "templates")
 
 def get_connection():
-    return psycopg2.connect(os.getenv("DATABASE_URL"))
+    return psycopg2.connect(Config.DATABASE_URL)
 
 @app.get("/", response_class=HTMLResponse)
 def dashboard(request: Request):

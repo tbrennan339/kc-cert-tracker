@@ -1,4 +1,5 @@
 """TheirStack job postings API extractor."""
+import datetime
 import logging
 import requests
 
@@ -85,8 +86,6 @@ DEFAULT_JOB_TITLES = [
 DEFAULT_SOURCES = [
     "indeed.com",
     "linkedin.com",
-    "ziprecruiter.com",
-    "glassdoor.com",
 ]
 
 
@@ -104,6 +103,8 @@ def extract_jobs(api_key: str, limit: int = 25) -> list[dict]:
     Raises:
         requests.exceptions.HTTPError: If API returns an error status
     """
+    yesterday = datetime.date.today() - datetime.timedelta(days=1)
+
     headers = {
         "Authorization": f"Bearer {api_key}",
         "Content-Type": "application/json",
@@ -112,7 +113,8 @@ def extract_jobs(api_key: str, limit: int = 25) -> list[dict]:
     body = {
         "page": 0,
         "limit": limit,
-        "posted_at_max_age_days": 0,
+        "posted_at_gte": yesterday.isoformat(),
+        "posted_at_lte": yesterday.isoformat(),
         "blur_company_data": False,
         "include_total_results": False,
         "job_title_or": DEFAULT_JOB_TITLES,

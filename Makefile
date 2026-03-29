@@ -1,6 +1,6 @@
-COMPOSE = docker compose -f infrastructure/docker/docker-compose.yml --env-file infrastructure/docker/.env
+COMPOSE = docker compose -f infrastructure/docker/docker-compose.yml --env-file .env
 
-include infrastructure/docker/.env
+include .env
 export
 
 up:
