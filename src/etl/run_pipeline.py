@@ -8,6 +8,7 @@ from src.etl.loaders.gold import aggregate_certs, load_to_postgres
 from src.etl.loaders.storage import save_to_r2
 from src.etl.transformers.cert_extractor import extract_certs
 from src.config import Config
+from src.etl.transformers.dedup import deduplicate_jobs
 
 logging.basicConfig(
     level=logging.INFO,
@@ -31,15 +32,16 @@ yesterday = datetime.date.today() - datetime.timedelta(days=1)
 
 if __name__ == "__main__":
     try:
-        # Extract
+        # Extract — pull yesterday's job postings from TheirStack API
         jobs = extract_jobs(api_key, 25)
         save_to_r2(jobs, str(yesterday), s3_client, r2_bucket, "bronze")
 
-        # Transform
-        jobs_with_certs = extract_certs(jobs)
+        # Transform — deduplicate cross-source postings, extract cert mentions
+        deduped_jobs = deduplicate_jobs(jobs, connection_string)
+        jobs_with_certs = extract_certs(deduped_jobs)
         save_to_r2(jobs_with_certs, str(yesterday), s3_client, r2_bucket, "silver")
 
-        # Load
+        # Load — aggregate daily cert counts to PostgreSQL
         aggregate_data = aggregate_certs(jobs_with_certs)
         load_to_postgres(aggregate_data, connection_string)
 
