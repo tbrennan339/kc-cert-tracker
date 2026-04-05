@@ -6,7 +6,7 @@
     <title>KC Cert Tracker</title>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;600&family=IBM+Plex+Sans:wght@300;500;700&display=swap');
+        @import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@300;400;500;600&family=IBM+Plex+Sans:wght@300;400;500;700&display=swap');
 
         * { margin: 0; padding: 0; box-sizing: border-box; }
 
@@ -15,109 +15,350 @@
             background: #0a0e17;
             color: #e0e4ec;
             min-height: 100vh;
-            padding: 3rem 2rem;
+            padding: 2.5rem 2rem 4rem;
         }
 
-        .container { max-width: 960px; margin: 0 auto; }
+        .container { max-width: 1100px; margin: 0 auto; }
 
-        h1 {
+        /* ── Header ── */
+        .header { margin-bottom: 2.5rem; }
+
+        .header h1 {
             font-family: 'IBM Plex Mono', monospace;
-            font-size: 1.8rem;
+            font-size: 1.9rem;
             font-weight: 600;
             color: #58a6ff;
-            margin-bottom: 0.25rem;
+            letter-spacing: -0.5px;
+            margin-bottom: 0.5rem;
         }
 
-        .subtitle {
+        .header p {
             font-size: 0.95rem;
             color: #6b7280;
-            margin-bottom: 2.5rem;
             font-weight: 300;
+            line-height: 1.6;
+            max-width: 680px;
         }
 
-        .chart-wrapper {
+        .header .accent { color: #8b949e; font-weight: 400; }
+
+        /* ── Cards ── */
+        .card {
             background: #111827;
             border: 1px solid #1e293b;
             border-radius: 12px;
-            padding: 2rem;
+            padding: 1.75rem;
+            position: relative;
         }
 
-        .loading {
-            text-align: center;
-            color: #6b7280;
-            padding: 2rem;
+        .card-title {
             font-family: 'IBM Plex Mono', monospace;
+            font-size: 0.85rem;
+            font-weight: 500;
+            color: #8b949e;
+            text-transform: uppercase;
+            letter-spacing: 0.8px;
+            margin-bottom: 1.25rem;
         }
 
-        .error {
-            text-align: center;
+        .card-title .dot {
+            display: inline-block;
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            margin-right: 8px;
+            position: relative;
+            top: -1px;
+        }
+
+        .dot-blue { background: #58a6ff; }
+        .dot-green { background: #3fb950; }
+        .dot-purple { background: #bc8cff; }
+
+        /* ── Grid ── */
+        .bar-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1.25rem;
+            margin-bottom: 1.25rem;
+        }
+
+        @media (max-width: 768px) {
+            .bar-grid { grid-template-columns: 1fr; }
+        }
+
+        /* ── Chart containers ── */
+        .bar-chart-container {
+            position: relative;
+            width: 100%;
+            height: 400px;
+        }
+
+        .trend-chart-container {
+            position: relative;
+            width: 100%;
+            height: 350px;
+        }
+
+        /* ── Loading / error ── */
+        .loading-state {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            height: 100%;
+            color: #6b7280;
+            font-family: 'IBM Plex Mono', monospace;
+            font-size: 0.85rem;
+        }
+
+        .loading-state .spinner {
+            width: 16px;
+            height: 16px;
+            border: 2px solid #1e293b;
+            border-top-color: #58a6ff;
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+            margin-right: 10px;
+        }
+
+        @keyframes spin { to { transform: rotate(360deg); } }
+
+        .error-state {
             color: #f87171;
+            font-family: 'IBM Plex Mono', monospace;
+            font-size: 0.85rem;
+            text-align: center;
             padding: 2rem;
+        }
+
+        /* ── Trend legend override ── */
+        .trend-card .card-subtitle {
+            font-size: 0.8rem;
+            color: #6b7280;
+            font-weight: 300;
+            margin-top: -0.75rem;
+            margin-bottom: 1.25rem;
         }
     </style>
 </head>
 <body>
     <div class="container">
-        <h1>KC Metro Cert Demand</h1>
-        <p class="subtitle" id="subtitle">Loading...</p>
-        <div class="chart-wrapper">
-            <div class="loading" id="loading">Fetching cert data...</div>
-            <canvas id="certChart" style="display: none;"></canvas>
+
+        <!-- Header -->
+        <div class="header">
+            <h1>KC Cert Tracker</h1>
+            <p>
+                Tracking which IT certifications appear in
+                <span class="accent">Kansas City metro</span> job postings.
+                Data pulled daily from Indeed and LinkedIn to help you
+                figure out what's actually worth studying for.
+            </p>
         </div>
+
+        <!-- Bar charts row -->
+        <div class="bar-grid">
+            <div class="card" id="card-7d">
+                <div class="card-title"><span class="dot dot-blue"></span>Last 7 Days</div>
+                <div class="bar-chart-container">
+                    <div class="loading-state" id="loading-7d">
+                        <div class="spinner"></div> Loading...
+                    </div>
+                    <canvas id="chart7d" style="display:none;"></canvas>
+                </div>
+            </div>
+            <div class="card" id="card-30d">
+                <div class="card-title"><span class="dot dot-green"></span>Last 30 Days</div>
+                <div class="bar-chart-container">
+                    <div class="loading-state" id="loading-30d">
+                        <div class="spinner"></div> Loading...
+                    </div>
+                    <canvas id="chart30d" style="display:none;"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <!-- Trend chart -->
+        <div class="card trend-card">
+            <div class="card-title"><span class="dot dot-purple"></span>Cert Trends</div>
+            <p class="card-subtitle">Top 5 certs by volume — click legend labels to toggle</p>
+            <div class="trend-chart-container">
+                <div class="loading-state" id="loading-trends">
+                    <div class="spinner"></div> Loading...
+                </div>
+                <canvas id="chartTrends" style="display:none;"></canvas>
+            </div>
+        </div>
+
     </div>
 
     <script>
-        fetch('/certs')
-            .then(response => {
-                if (!response.ok) throw new Error(`HTTP ${response.status}`);
-                return response.json();
-            })
+        /* ── Palette ── */
+        const COLORS = ['#58a6ff', '#3fb950', '#bc8cff', '#f0883e', '#f87171'];
+
+        /* ── Helpers ── */
+        function showChart(loadingId, canvasId) {
+            document.getElementById(loadingId).style.display = 'none';
+            document.getElementById(canvasId).style.display = 'block';
+        }
+
+        function showError(loadingId, message) {
+            const el = document.getElementById(loadingId);
+            el.innerHTML = `<span class="error-state">${message}</span>`;
+        }
+
+        function buildBarChart(canvasId, labels, counts, color) {
+            return new Chart(document.getElementById(canvasId), {
+                type: 'bar',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        data: counts,
+                        backgroundColor: color,
+                        borderRadius: 4,
+                        barThickness: 24,
+                    }]
+                },
+                options: {
+                    indexAxis: 'y',
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { legend: { display: false } },
+                    scales: {
+                        x: {
+                            ticks: {
+                                color: '#6b7280',
+                                font: { family: 'IBM Plex Mono', size: 11 },
+                                stepSize: 1,
+                            },
+                            grid: { color: '#1e293b' },
+                        },
+                        y: {
+                            ticks: {
+                                color: '#e0e4ec',
+                                font: { family: 'IBM Plex Mono', size: 12 },
+                            },
+                            grid: { display: false },
+                        }
+                    }
+                }
+            });
+        }
+
+        /* ── 7-Day Chart ── */
+        fetch('/api/certs/7d')
+            .then(r => { if (!r.ok) throw new Error(`HTTP ${r.status}`); return r.json(); })
             .then(data => {
-                document.getElementById('loading').style.display = 'none';
-                document.getElementById('certChart').style.display = 'block';
+                const top = data.slice(0, 15);
+                showChart('loading-7d', 'chart7d');
+                buildBarChart(
+                    'chart7d',
+                    top.map(d => d.cert_name),
+                    top.map(d => d.job_count),
+                    '#58a6ff'
+                );
+            })
+            .catch(e => showError('loading-7d', `Failed to load: ${e.message}`));
 
-                const labels = data.map(row => row.cert_name);
-                const counts = data.map(row => row.job_count);
-                const date = data.length > 0 ? data[0].date : 'No data';
+        /* ── 30-Day Chart ── */
+        fetch('/api/certs/30d')
+            .then(r => { if (!r.ok) throw new Error(`HTTP ${r.status}`); return r.json(); })
+            .then(data => {
+                const top = data.slice(0, 15);
+                showChart('loading-30d', 'chart30d');
+                buildBarChart(
+                    'chart30d',
+                    top.map(d => d.cert_name),
+                    top.map(d => d.job_count),
+                    '#3fb950'
+                );
+            })
+            .catch(e => showError('loading-30d', `Failed to load: ${e.message}`));
 
-                document.getElementById('subtitle').textContent =
-                    `${date} — Certifications mentioned in job postings`;
+        /* ── Trend Chart ── */
+        fetch('/api/certs/trends')
+            .then(r => { if (!r.ok) throw new Error(`HTTP ${r.status}`); return r.json(); })
+            .then(data => {
+                showChart('loading-trends', 'chartTrends');
 
-                new Chart(document.getElementById('certChart'), {
-                    type: 'bar',
-                    data: {
-                        labels: labels,
-                        datasets: [{
-                            label: 'Job Postings',
-                            data: counts,
-                            backgroundColor: '#58a6ff',
-                            borderRadius: 4,
-                            barThickness: 28,
-                        }]
-                    },
+                // Get unique dates sorted chronologically
+                const dates = [...new Set(data.map(d => d.date))].sort();
+
+                // Sum total mentions per cert across all dates
+                const certTotals = {};
+                data.forEach(d => {
+                    certTotals[d.cert_name] = (certTotals[d.cert_name] || 0) + d.job_count;
+                });
+
+                // Pick top 5 certs by total volume
+                const top5 = Object.entries(certTotals)
+                    .sort((a, b) => b[1] - a[1])
+                    .slice(0, 5)
+                    .map(entry => entry[0]);
+
+                // Build a dataset per cert
+                const datasets = top5.map((cert, i) => {
+                    const certData = data.filter(d => d.cert_name === cert);
+                    const countsByDate = {};
+                    certData.forEach(d => { countsByDate[d.date] = d.job_count; });
+
+                    return {
+                        label: cert,
+                        data: dates.map(date => countsByDate[date] || 0),
+                        borderColor: COLORS[i],
+                        backgroundColor: COLORS[i] + '20',
+                        borderWidth: 2,
+                        pointRadius: 3,
+                        pointBackgroundColor: COLORS[i],
+                        tension: 0.3,
+                        fill: false,
+                    };
+                });
+
+                new Chart(document.getElementById('chartTrends'), {
+                    type: 'line',
+                    data: { labels: dates, datasets: datasets },
                     options: {
-                        indexAxis: 'y',
                         responsive: true,
                         maintainAspectRatio: false,
-                        plugins: { legend: { display: false } },
+                        interaction: {
+                            mode: 'index',
+                            intersect: false,
+                        },
+                        plugins: {
+                            legend: {
+                                position: 'top',
+                                labels: {
+                                    color: '#e0e4ec',
+                                    font: { family: 'IBM Plex Mono', size: 11 },
+                                    usePointStyle: true,
+                                    pointStyle: 'circle',
+                                    padding: 20,
+                                },
+                            },
+                        },
                         scales: {
                             x: {
-                                ticks: { color: '#6b7280', font: { family: 'IBM Plex Mono' }, stepSize: 1 },
+                                ticks: {
+                                    color: '#6b7280',
+                                    font: { family: 'IBM Plex Mono', size: 11 },
+                                    maxRotation: 45,
+                                },
                                 grid: { color: '#1e293b' },
                             },
                             y: {
-                                ticks: { color: '#e0e4ec', font: { family: 'IBM Plex Mono', size: 13 } },
-                                grid: { display: false },
+                                ticks: {
+                                    color: '#6b7280',
+                                    font: { family: 'IBM Plex Mono', size: 11 },
+                                    stepSize: 1,
+                                },
+                                grid: { color: '#1e293b' },
+                                beginAtZero: true,
                             }
                         }
                     }
                 });
             })
-            .catch(error => {
-                document.getElementById('loading').innerHTML =
-                    `<span class="error">Failed to load data: ${error.message}</span>`;
-                console.error('Failed to fetch certs:', error);
-            });
+            .catch(e => showError('loading-trends', `Failed to load: ${e.message}`));
     </script>
 </body>
 </html>
