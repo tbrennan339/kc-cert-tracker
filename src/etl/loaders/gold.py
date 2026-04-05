@@ -14,6 +14,9 @@ def aggregate_certs(jobs: list[dict]) -> pd.DataFrame:
     Returns:
         DataFrame with amount of certification mentions on specific date
     """
+    if not jobs:
+        logger.info("No jobs to aggregate")
+        return pd.DataFrame(columns=["cert_name", "job_count", "date"])
 
     jobs_df = pd.DataFrame(jobs)
     cert_df = (
