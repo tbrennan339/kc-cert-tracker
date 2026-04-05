@@ -4,6 +4,8 @@ from fastapi.responses import HTMLResponse
 from fastapi.templating import Jinja2Templates
 from starlette.requests import Request
 import psycopg2
+
+from src.api.db.queries import get_certs_last_7_days, get_certs_last_30_days, get_cert_trends
 from src.config import Config
 app = FastAPI()
 templates = Jinja2Templates(directory=pathlib.Path(__file__).resolve().parent / "templates")
@@ -15,23 +17,35 @@ def get_connection():
 def dashboard(request: Request):
     return templates.TemplateResponse(name="dashboard.html", request=request)
 
-@app.get("/certs")
-def get_certs():
+@app.get("/api/certs/7d")
+def get_certs_7d():
+    conn = get_connection()
     try:
-        conn = get_connection()
-        cur = conn.cursor()
-        cur.execute("""
-                    SELECT cert_name, job_count, date 
-                    FROM cert_daily_counts
-                    ORDER BY job_count DESC
-                """)
-        rows = cur.fetchall()
-        cur.close()
-        conn.close()
-
-        return [
-            {"cert_name": row[0], "job_count": row[1], "date": str(row[2])}
-            for row in rows
-        ]
+        rows = get_certs_last_7_days(conn)
+        return [{"cert_name": row[0], "job_count": row[1]} for row in rows]
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
+    finally:
+        conn.close()
+
+@app.get("/api/certs/30d")
+def get_certs_30d():
+    conn = get_connection()
+    try:
+        rows = get_certs_last_30_days(conn)
+        return [{"cert_name": row[0], "job_count": row[1]} for row in rows]
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+    finally:
+        conn.close()
+
+@app.get("/api/certs/trends")
+def get_certs_trends_route():
+    conn = get_connection()
+    try:
+        rows = get_cert_trends(conn)
+        return [{"date": str(row[0]), "cert_name": row[1], "job_count": row[2]} for row in rows]
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+    finally:
+        conn.close()
