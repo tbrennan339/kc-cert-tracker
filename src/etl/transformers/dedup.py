@@ -42,28 +42,41 @@ def fingerprint(text: str) -> str:
     chunk = norm[500:1500] if len(norm) > 500 else norm
     return hashlib.md5(chunk.encode()).hexdigest()
 
-def deduplicate_jobs(jobs: list[dict], connection_string: str) -> list[dict]:
+def deduplicate_jobs(jobs: list[dict], connection_string: str, target_date: str = None) -> list[dict]:
     """
-        Remove duplicate job postings using description fingerprinting.
+    Remove duplicate job postings using description fingerprinting.
 
-        Compares each job's fingerprint against hashes stored in the seen_jobs
-        table from the last 21 days. Jobs with unseen fingerprints are kept
-        and recorded; duplicates are logged with details of the original match
-        for manual spot-checking. Jobs with no description are passed through.
+    Compares each job's fingerprint against hashes stored in the seen_jobs
+    table within a 21-day window. Jobs with unseen fingerprints are kept
+    and recorded; duplicates are logged with details of the original match
+    for manual spot-checking. Jobs with no description are passed through.
 
-        Args:
-            jobs: List of job dicts from the bronze layer
-            connection_string: PostgreSQL connection string
+    The 21-day window is calculated from target_date if provided (used
+    during backfill to simulate real-time behavior), otherwise from
+    CURRENT_DATE (used by the daily pipeline). This ensures that recurring
+    positions count as new demand after the window expires.
 
-        Returns:
-            Filtered list of jobs with duplicates removed
-        """
+    Args:
+        jobs: List of job dicts from the bronze layer
+        connection_string: PostgreSQL connection string
+        target_date: ISO date string (YYYY-MM-DD) to anchor the 21-day
+                     window. Defaults to None, which uses CURRENT_DATE.
+
+    Returns:
+        Filtered list of jobs with duplicates removed
+    """
     conn = psycopg2.connect(connection_string)
     try:
         cur = conn.cursor()
-        cur.execute("""SELECT description_hash, first_seen, job_title, company 
-                       FROM seen_jobs 
-                       WHERE first_seen >= CURRENT_DATE - INTERVAL '21 days'""")
+        if target_date:
+            cur.execute("""SELECT description_hash, first_seen, job_title, company
+                           FROM seen_jobs
+                           WHERE first_seen >= %s::date - INTERVAL '21 days'""", (target_date,))
+        else:
+            cur.execute("""SELECT description_hash, first_seen, job_title, company 
+                           FROM seen_jobs 
+                           WHERE first_seen >= CURRENT_DATE - INTERVAL '21 days'""")
+
         rows = cur.fetchall()
         hash_map = {row[0]: {"first_seen": row[1], "job_title": row[2], "company": row[3]} for row in rows}
         logger.info(f"Loaded {len(hash_map)} existing hashes")
@@ -84,7 +97,8 @@ def deduplicate_jobs(jobs: list[dict], connection_string: str) -> list[dict]:
                 hash_map[job_hash] = {"first_seen": job['date_posted'], "job_title": job['job_title'], "company": job['company']}
                 cur.execute(
                     """INSERT INTO seen_jobs (description_hash, first_seen, job_title, company)
-                       VALUES (%s, %s, %s, %s)""",
+                       VALUES (%s, %s, %s, %s) 
+                       ON CONFLICT (description_hash) DO NOTHING""",
                     (job_hash, job['date_posted'], job['job_title'], job['company'])
                 )
             else:
