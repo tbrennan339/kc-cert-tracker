@@ -3,11 +3,6 @@ import datetime
 import logging
 import requests
 
-logging.basicConfig(
-    level=logging.INFO,
-    format="%(asctime)s - %(name)s - %(levelname)s - %(message)s"
-)
-
 logger = logging.getLogger(__name__)
 
 # Config
@@ -89,13 +84,14 @@ DEFAULT_SOURCES = [
 ]
 
 
-def extract_jobs(api_key: str, limit: int = 25) -> list[dict]:
+def extract_jobs(api_key: str, limit: int = 25, target_date: datetime.date = None) -> list[dict]:
     """
     Pull job postings from TheirStack API.
 
     Args:
         api_key: TheirStack API key
         limit: Max number of jobs to return
+        target_date: Specific date to pull jobs for. Defaults to yesterday.
 
     Returns:
         List of job dictionaries from the API
@@ -103,7 +99,9 @@ def extract_jobs(api_key: str, limit: int = 25) -> list[dict]:
     Raises:
         requests.exceptions.HTTPError: If API returns an error status
     """
-    yesterday = datetime.date.today() - datetime.timedelta(days=1)
+
+    if target_date is None:
+        target_date = datetime.date.today() - datetime.timedelta(days=1)
 
     headers = {
         "Authorization": f"Bearer {api_key}",
@@ -113,8 +111,8 @@ def extract_jobs(api_key: str, limit: int = 25) -> list[dict]:
     body = {
         "page": 0,
         "limit": limit,
-        "posted_at_gte": yesterday.isoformat(),
-        "posted_at_lte": yesterday.isoformat(),
+        "posted_at_gte": target_date.isoformat(),
+        "posted_at_lte": target_date.isoformat(),
         "blur_company_data": False,
         "include_total_results": False,
         "job_title_or": DEFAULT_JOB_TITLES,
