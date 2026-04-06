@@ -27,8 +27,10 @@ s3_client = boto3.client(
 api_key = Config.THEIRSTACK_API_KEY
 connection_string = Config.DATABASE_URL
 
-start = datetime.date(2026, 1, 2)
-end = datetime.date(2026, 4, 5)
+# Configure backfill range
+start = datetime.date(2026, 1, 1)  # First date to backfill
+end = datetime.date.today() - datetime.timedelta(days=1)  # Yesterday
+
 dates = [start + datetime.timedelta(days=i) for i in range((end - start).days + 1)]
 
 consecutive_failures = 0
