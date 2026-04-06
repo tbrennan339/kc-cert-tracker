@@ -27,8 +27,8 @@ s3_client = boto3.client(
 api_key = Config.THEIRSTACK_API_KEY
 connection_string = Config.DATABASE_URL
 
-start = datetime.date(2026, 1, 1)
-end = datetime.date(2026, 3, 29)
+start = datetime.date(2026, 1, 2)
+end = datetime.date(2026, 4, 5)
 dates = [start + datetime.timedelta(days=i) for i in range((end - start).days + 1)]
 
 consecutive_failures = 0
@@ -41,7 +41,7 @@ for i, date in enumerate(dates):
         save_to_r2(jobs, str(date), s3_client, r2_bucket, "bronze")
 
         # Transform
-        deduped_jobs = deduplicate_jobs(jobs, connection_string)
+        deduped_jobs = deduplicate_jobs(jobs, connection_string, target_date=str(date))
         jobs_with_certs = extract_certs(deduped_jobs)
         save_to_r2(jobs_with_certs, str(date), s3_client, r2_bucket, "silver")
 
@@ -51,6 +51,7 @@ for i, date in enumerate(dates):
 
         # Wait
         time.sleep(2)
+        consecutive_failures = 0
 
     except Exception as e:
         consecutive_failures += 1
