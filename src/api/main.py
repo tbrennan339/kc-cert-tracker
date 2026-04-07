@@ -7,7 +7,7 @@ import psycopg2
 
 from src.api.db.queries import get_certs_last_7_days, get_certs_last_30_days, get_cert_trends
 from src.config import Config
-app = FastAPI()
+app = FastAPI(docs_url=None, redoc_url=None)
 templates = Jinja2Templates(directory=pathlib.Path(__file__).resolve().parent / "templates")
 
 def get_connection():
