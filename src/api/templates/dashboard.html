@@ -49,6 +49,7 @@
             border-radius: 12px;
             padding: 1.75rem;
             position: relative;
+            overflow: hidden;
         }
 
         .card-title {
@@ -85,6 +86,14 @@
 
         @media (max-width: 768px) {
             .bar-grid { grid-template-columns: 1fr; }
+
+            body { padding: 1.5rem 1rem 3rem; }
+
+            .card { padding: 1.25rem 1rem; }
+
+            .header h1 { font-size: 1.5rem; }
+
+            .trend-card .card-subtitle { font-size: 0.75rem; }
         }
 
         /* ── Chart containers ── */
@@ -98,6 +107,11 @@
             position: relative;
             width: 100%;
             height: 350px;
+        }
+
+        .bar-chart-container canvas,
+        .trend-chart-container canvas {
+            max-width: 100%;
         }
 
         /* ── Loading / error ── */
@@ -206,6 +220,25 @@
             el.innerHTML = `<span class="error-state">${message}</span>`;
         }
 
+        const SHORT_NAMES = {
+            'CompTIA Security+': 'Sec+',
+            'CompTIA Network+': 'Net+',
+            'CompTIA A+': 'A+',
+            'CompTIA CySA+': 'CySA+',
+            'CompTIA CASP+': 'CASP+',
+            'CompTIA Linux+': 'Linux+',
+            'CompTIA Cloud+': 'Cloud+',
+            'CompTIA Data+': 'Data+',
+            'CompTIA PenTest+': 'PenTest+',
+            'CompTIA Server+': 'Server+',
+        };
+
+        const isMobile = window.innerWidth <= 768;
+
+        function shorten(name) {
+            return isMobile ? (SHORT_NAMES[name] || name) : name;
+        }
+
         function buildBarChart(canvasId, labels, counts, color) {
             return new Chart(document.getElementById(canvasId), {
                 type: 'bar',
@@ -215,7 +248,7 @@
                         data: counts,
                         backgroundColor: color,
                         borderRadius: 4,
-                        barThickness: 21,
+                        barThickness: isMobile ? 16 : 21,
                         barPercentage: 0.9,
                         categoryPercentage: 0.9,
                     }]
@@ -229,7 +262,7 @@
                         x: {
                             ticks: {
                                 color: '#6b7280',
-                                font: { family: 'IBM Plex Mono', size: 11 },
+                                font: { family: 'IBM Plex Mono', size: isMobile ? 10 : 11 },
                                 stepSize: 1,
                             },
                             grid: { color: '#1e293b' },
@@ -237,8 +270,8 @@
                         y: {
                             ticks: {
                                 color: '#e0e4ec',
-                                font: { family: 'IBM Plex Mono', size: 12 },
-                                padding: 8,
+                                font: { family: 'IBM Plex Mono', size: isMobile ? 10 : 12 },
+                                padding: isMobile ? 4 : 8,
                             },
                             grid: {
                                 display: true,
@@ -259,7 +292,7 @@
                 showChart('loading-7d', 'chart7d');
                 buildBarChart(
                     'chart7d',
-                    top.map(d => d.cert_name),
+                    top.map(d => shorten(d.cert_name)),
                     top.map(d => d.job_count),
                     '#58a6ff'
                 );
@@ -274,7 +307,7 @@
                 showChart('loading-30d', 'chart30d');
                 buildBarChart(
                     'chart30d',
-                    top.map(d => d.cert_name),
+                    top.map(d => shorten(d.cert_name)),
                     top.map(d => d.job_count),
                     '#3fb950'
                 );
@@ -312,7 +345,7 @@
                     });
 
                     return {
-                        label: cert,
+                        label: shorten(cert),
                         data: cumulativeData,
                         borderColor: COLORS[i],
                         backgroundColor: COLORS[i] + '30',
@@ -338,10 +371,10 @@
                                 position: 'top',
                                 labels: {
                                     color: '#e0e4ec',
-                                    font: { family: 'IBM Plex Mono', size: 11 },
+                                    font: { family: 'IBM Plex Mono', size: isMobile ? 9 : 11 },
                                     usePointStyle: true,
                                     pointStyle: 'circle',
-                                    padding: 20,
+                                    padding: isMobile ? 10 : 20,
                                 },
                             },
                             tooltip: {
