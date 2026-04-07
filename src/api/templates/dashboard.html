@@ -180,7 +180,7 @@
         <!-- Trend chart -->
         <div class="card trend-card">
             <div class="card-title"><span class="dot dot-purple"></span>Cert Trends</div>
-            <p class="card-subtitle">Top 5 certs by volume — click legend labels to toggle</p>
+            <p class="card-subtitle">Top 5 certs — cumulative mentions since Jan 1, 2026. Click legend to toggle.</p>
             <div class="trend-chart-container">
                 <div class="loading-state" id="loading-trends">
                     <div class="spinner"></div> Loading...
@@ -215,7 +215,9 @@
                         data: counts,
                         backgroundColor: color,
                         borderRadius: 4,
-                        barThickness: 24,
+                        barThickness: 21,
+                        barPercentage: 0.9,
+                        categoryPercentage: 0.9,
                     }]
                 },
                 options: {
@@ -236,8 +238,13 @@
                             ticks: {
                                 color: '#e0e4ec',
                                 font: { family: 'IBM Plex Mono', size: 12 },
+                                padding: 8,
                             },
-                            grid: { display: false },
+                            grid: {
+                                display: true,
+                                color: '#1e293b',
+                                drawTicks: false,
+                            },
                         }
                     }
                 }
@@ -274,43 +281,45 @@
             })
             .catch(e => showError('loading-30d', `Failed to load: ${e.message}`));
 
-        /* ── Trend Chart ── */
+        /* ── Cumulative Area Chart ── */
         fetch('/api/certs/trends')
             .then(r => { if (!r.ok) throw new Error(`HTTP ${r.status}`); return r.json(); })
             .then(data => {
                 showChart('loading-trends', 'chartTrends');
 
-                // Get unique dates sorted chronologically
                 const dates = [...new Set(data.map(d => d.date))].sort();
 
-                // Sum total mentions per cert across all dates
                 const certTotals = {};
                 data.forEach(d => {
                     certTotals[d.cert_name] = (certTotals[d.cert_name] || 0) + d.job_count;
                 });
 
-                // Pick top 5 certs by total volume
                 const top5 = Object.entries(certTotals)
                     .sort((a, b) => b[1] - a[1])
                     .slice(0, 5)
                     .map(entry => entry[0]);
 
-                // Build a dataset per cert
                 const datasets = top5.map((cert, i) => {
                     const certData = data.filter(d => d.cert_name === cert);
                     const countsByDate = {};
                     certData.forEach(d => { countsByDate[d.date] = d.job_count; });
 
+                    // Build cumulative totals
+                    let cumulative = 0;
+                    const cumulativeData = dates.map(date => {
+                        cumulative += countsByDate[date] || 0;
+                        return cumulative;
+                    });
+
                     return {
                         label: cert,
-                        data: dates.map(date => countsByDate[date] || 0),
+                        data: cumulativeData,
                         borderColor: COLORS[i],
-                        backgroundColor: COLORS[i] + '20',
+                        backgroundColor: COLORS[i] + '30',
                         borderWidth: 2,
-                        pointRadius: 3,
-                        pointBackgroundColor: COLORS[i],
+                        pointRadius: 0,
                         tension: 0.3,
-                        fill: false,
+                        fill: true,
                     };
                 });
 
@@ -335,6 +344,13 @@
                                     padding: 20,
                                 },
                             },
+                            tooltip: {
+                                callbacks: {
+                                    label: function(context) {
+                                        return `${context.dataset.label}: ${context.raw} total mentions`;
+                                    }
+                                }
+                            }
                         },
                         scales: {
                             x: {
@@ -342,6 +358,7 @@
                                     color: '#6b7280',
                                     font: { family: 'IBM Plex Mono', size: 11 },
                                     maxRotation: 45,
+                                    maxTicksLimit: 15,
                                 },
                                 grid: { color: '#1e293b' },
                             },
@@ -349,10 +366,10 @@
                                 ticks: {
                                     color: '#6b7280',
                                     font: { family: 'IBM Plex Mono', size: 11 },
-                                    stepSize: 1,
                                 },
                                 grid: { color: '#1e293b' },
                                 beginAtZero: true,
+                                stacked: false,
                             }
                         }
                     }
