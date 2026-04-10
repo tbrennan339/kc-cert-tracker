@@ -13,6 +13,9 @@ templates = Jinja2Templates(directory=pathlib.Path(__file__).resolve().parent / 
 def get_connection():
     return psycopg2.connect(Config.DATABASE_URL)
 
+@app.get("/health")
+def health():
+    return {"status": "ok"}
 @app.get("/", response_class=HTMLResponse)
 def dashboard(request: Request):
     return templates.TemplateResponse(name="dashboard.html", request=request)
