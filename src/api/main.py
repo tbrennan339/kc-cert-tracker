@@ -56,7 +56,3 @@ def get_certs_trends_route():
         raise HTTPException(status_code=500, detail=str(e))
     finally:
         conn.close()
-
-@app.get("/sentry-test")
-def sentry_test():
-    raise Exception("Testing Sentry integration!")
