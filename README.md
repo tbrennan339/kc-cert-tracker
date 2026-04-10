@@ -11,7 +11,6 @@ Built to answer a simple question for job seekers: **what certs are actually wor
 ---
 
 ## Architecture
-## Architecture
 ```
 Job Board APIs (TheirStack)
         │
