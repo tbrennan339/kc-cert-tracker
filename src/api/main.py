@@ -7,12 +7,19 @@ import psycopg2
 
 from src.api.db.queries import get_certs_last_7_days, get_certs_last_30_days, get_cert_trends
 from src.config import Config
+import sentry_sdk
+
+if Config.SENTRY_DSN:
+    sentry_sdk.init(dsn=Config.SENTRY_DSN)
 app = FastAPI(docs_url=None, redoc_url=None)
 templates = Jinja2Templates(directory=pathlib.Path(__file__).resolve().parent / "templates")
 
 def get_connection():
     return psycopg2.connect(Config.DATABASE_URL)
 
+@app.get("/health")
+def health():
+    return {"status": "ok"}
 @app.get("/", response_class=HTMLResponse)
 def dashboard(request: Request):
     return templates.TemplateResponse(name="dashboard.html", request=request)
