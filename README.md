@@ -172,6 +172,13 @@ kc-cert-tracker/
 
 ---
 
+## Monitoring
+
+- **Sentry** — Real-time error tracking and alerting for unhandled exceptions
+- **UptimeRobot** — Availability monitoring with 5-minute health checks at `/health`
+
+---
+
 ## Cost
 
 Runs entirely on free tiers:
