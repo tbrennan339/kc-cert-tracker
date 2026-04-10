@@ -7,6 +7,10 @@ import psycopg2
 
 from src.api.db.queries import get_certs_last_7_days, get_certs_last_30_days, get_cert_trends
 from src.config import Config
+import sentry_sdk
+
+if Config.SENTRY_DSN:
+    sentry_sdk.init(dsn=Config.SENTRY_DSN)
 app = FastAPI(docs_url=None, redoc_url=None)
 templates = Jinja2Templates(directory=pathlib.Path(__file__).resolve().parent / "templates")
 
@@ -52,3 +56,7 @@ def get_certs_trends_route():
         raise HTTPException(status_code=500, detail=str(e))
     finally:
         conn.close()
+
+@app.get("/sentry-test")
+def sentry_test():
+    raise Exception("Testing Sentry integration!")

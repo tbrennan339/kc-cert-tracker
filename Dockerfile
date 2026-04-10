@@ -3,7 +3,7 @@ FROM python:3.12-slim
 WORKDIR /app
 
 COPY pyproject.toml .
-RUN pip install --no-cache-dir requests boto3 psycopg2-binary pandas python-dotenv fastapi uvicorn jinja2
+RUN pip install --no-cache-dir requests boto3 psycopg2-binary pandas python-dotenv fastapi uvicorn jinja2 sentry-sdk[fastapi]
 
 COPY src/ src/
 
