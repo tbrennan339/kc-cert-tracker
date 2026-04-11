@@ -172,10 +172,12 @@ kc-cert-tracker/
 
 ---
 
-## Monitoring
+## CI/CD & Monitoring
 
-- **Sentry** — Real-time error tracking and alerting for unhandled exceptions
-- **UptimeRobot** — Availability monitoring with 5-minute health checks at `/health`
+- **CI** — GitHub Actions runs pytest on every pull request
+- **CD** — Merging to main auto-deploys to Fly.io via GitHub Actions
+- **Sentry** — Real-time error tracking and alerting
+- **UptimeRobot** — Availability monitoring with 5-minute health checks
 
 ---
 
