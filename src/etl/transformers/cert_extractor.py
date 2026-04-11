@@ -3,7 +3,7 @@ import re
 CERT_PATTERNS = {
         # CompTIA
         "CompTIA A+": r'comptia\s+a\+|comptia\s+a\s+plus|\ba\+\s+cert',
-        "CompTIA Network+": r'network\+|comptia\s+network',
+        "CompTIA Network+": r'network\+|comptia\s+network|net\+',
         "CompTIA Security+": r'security\+|comptia\s+security|sec\+',
         "CompTIA CySA+": r'cysa\+|comptia\s+cysa',
         "CompTIA CASP+": r'casp\+|comptia\s+casp',
