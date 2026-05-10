@@ -33,6 +33,15 @@ def aggregate_certs(jobs: list[dict]) -> pd.DataFrame:
 
 
 def aggregate_categories(jobs: list[dict]) -> pd.DataFrame:
+    """
+        Aggregate job category counts by date.
+
+        Args:
+            jobs: List of job dicts from silver layer
+
+        Returns:
+            DataFrame with amount of jobs per category on specific date
+        """
     if not jobs:
         logger.info("No jobs to aggregate")
         return pd.DataFrame(columns=["category", "job_count", "date"])
@@ -49,7 +58,7 @@ def aggregate_categories(jobs: list[dict]) -> pd.DataFrame:
     logger.info(f"Aggregated {len(cat_df)} category counts from {len(jobs)} jobs")
     return cat_df
 
-def load_to_postgres(cert_counts: pd.DataFrame, connection_string: str) -> None:
+def load_certs_to_postgres(cert_counts: pd.DataFrame, connection_string: str) -> None:
     conn = psycopg2.connect(connection_string)
 
     try:

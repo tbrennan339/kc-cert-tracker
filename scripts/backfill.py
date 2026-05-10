@@ -3,7 +3,7 @@ import boto3
 from src.etl.extractors.theirstack import extract_jobs
 import datetime
 import logging
-from src.etl.loaders.gold import aggregate_certs, load_to_postgres
+from src.etl.loaders.gold import aggregate_certs, load_certs_to_postgres
 from src.etl.loaders.storage import save_to_r2
 from src.etl.transformers.cert_extractor import extract_certs
 from src.config import Config
@@ -49,7 +49,7 @@ for i, date in enumerate(dates):
 
         # Load
         aggregate_data = aggregate_certs(jobs_with_certs)
-        load_to_postgres(aggregate_data, connection_string)
+        load_certs_to_postgres(aggregate_data, connection_string)
 
         # Wait
         time.sleep(2)

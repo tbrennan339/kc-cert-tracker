@@ -4,8 +4,9 @@ from src.etl.extractors.theirstack import extract_jobs
 import datetime
 import logging
 
-from src.etl.loaders.gold import aggregate_certs, load_to_postgres
+from src.etl.loaders.gold import aggregate_certs, load_certs_to_postgres, aggregate_categories, load_categories_to_postgres
 from src.etl.loaders.storage import save_to_r2
+from src.etl.transformers.categorizer import categorize_jobs
 from src.etl.transformers.cert_extractor import extract_certs
 from src.config import Config
 from src.etl.transformers.dedup import deduplicate_jobs
@@ -36,14 +37,17 @@ if __name__ == "__main__":
         jobs = extract_jobs(api_key, 25)
         save_to_r2(jobs, str(yesterday), s3_client, r2_bucket, "bronze")
 
-        # Transform — deduplicate cross-source postings, extract cert mentions
+        # Transform — deduplicate cross-source postings, categorize jobs, extract cert mentions
         deduped_jobs = deduplicate_jobs(jobs, connection_string)
-        jobs_with_certs = extract_certs(deduped_jobs)
+        categorized_jobs = categorize_jobs(deduped_jobs)
+        jobs_with_certs = extract_certs(categorized_jobs)
         save_to_r2(jobs_with_certs, str(yesterday), s3_client, r2_bucket, "silver")
 
-        # Load — aggregate daily cert counts to PostgreSQL
-        aggregate_data = aggregate_certs(jobs_with_certs)
-        load_to_postgres(aggregate_data, connection_string)
+        # Load — aggregate daily cert and job category counts to PostgreSQL
+        aggregate_category_data = aggregate_categories(categorized_jobs)
+        aggregate_cert_data = aggregate_certs(jobs_with_certs)
+        load_certs_to_postgres(aggregate_cert_data, connection_string)
+        load_categories_to_postgres(aggregate_category_data, connection_string)
 
     except Exception as e:
         logger.error(f"Pipeline failed: {e}")
