@@ -5,7 +5,8 @@ from fastapi.templating import Jinja2Templates
 from starlette.requests import Request
 import psycopg2
 
-from src.api.db.queries import get_certs_last_7_days, get_certs_last_30_days, get_cert_trends, get_category_counts_30d
+from src.api.db.queries import get_certs_last_7_days, get_certs_last_30_days, get_cert_trends, get_category_counts_30d, \
+    get_category_counts_90d, get_category_trends
 from src.config import Config
 import sentry_sdk
 

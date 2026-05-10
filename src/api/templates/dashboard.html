@@ -158,7 +158,7 @@
 <body>
     <div class="container">
 
-        <!-- Header -->
+        <!-- Cert Section Header -->
         <div class="header">
             <h1>KC Cert Tracker</h1>
             <p>
@@ -169,7 +169,7 @@
             </p>
         </div>
 
-        <!-- Bar charts row -->
+        <!-- Cert bar charts row -->
         <div class="bar-grid">
             <div class="card" id="card-7d">
                 <div class="card-title"><span class="dot dot-blue"></span>Last 7 Days</div>
@@ -191,7 +191,7 @@
             </div>
         </div>
 
-        <!-- Trend chart -->
+        <!-- Cert Trend chart -->
         <div class="card trend-card">
             <div class="card-title"><span class="dot dot-purple"></span>Cert Trends</div>
             <p class="card-subtitle">Top 5 certs — cumulative mentions since Jan 1, 2026. Click legend to toggle.</p>
@@ -200,6 +200,46 @@
                     <div class="spinner"></div> Loading...
                 </div>
                 <canvas id="chartTrends" style="display:none;"></canvas>
+            </div>
+        </div>
+
+        <!-- Category Section Header -->
+        <div class="header" style="margin-top: 2.5rem;">
+            <h1>Job Market by Category</h1>
+            <p>How many IT jobs are being posted by specialization in the <span class="accent">Kansas City metro</span>.</p>
+        </div>
+
+        <!-- Category bar charts row -->
+        <div class="bar-grid">
+            <div class="card" id="card-cat-30d">
+                <div class="card-title"><span class="dot dot-blue"></span>Last 30 Days</div>
+                <div class="bar-chart-container">
+                    <div class="loading-state" id="loading-cat-30d">
+                        <div class="spinner"></div> Loading...
+                    </div>
+                    <canvas id="chartCat30d" style="display:none;"></canvas>
+                </div>
+            </div>
+            <div class="card" id="card-cat-90d">
+                <div class="card-title"><span class="dot dot-green"></span>Last 90 Days</div>
+                <div class="bar-chart-container">
+                    <div class="loading-state" id="loading-cat-90d">
+                        <div class="spinner"></div> Loading...
+                    </div>
+                    <canvas id="chartCat90d" style="display:none;"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <!-- Category trend chart -->
+        <div class="card trend-card">
+            <div class="card-title"><span class="dot dot-purple"></span>Category Trends</div>
+            <p class="card-subtitle">Cumulative job postings by category since Jan 1, 2026. Click legend to toggle.</p>
+            <div class="trend-chart-container">
+                <div class="loading-state" id="loading-cat-trends">
+                    <div class="spinner"></div> Loading...
+                </div>
+                <canvas id="chartCatTrends" style="display:none;"></canvas>
             </div>
         </div>
 
@@ -409,6 +449,119 @@
                 });
             })
             .catch(e => showError('loading-trends', `Failed to load: ${e.message}`));
+
+        /* ── Category 30-Day Chart ── */
+        fetch('/api/categories/30d')
+            .then(r => { if (!r.ok) throw new Error(`HTTP ${r.status}`); return r.json(); })
+            .then(data => {
+                const filtered = data.filter(d => d.category !== 'Uncategorized');
+                showChart('loading-cat-30d', 'chartCat30d');
+                buildBarChart(
+                    'chartCat30d',
+                    data.map(d => d.category),
+                    data.map(d => d.job_count),
+                    '#58a6ff'
+                );
+            })
+            .catch(e => showError('loading-cat-30d', `Failed to load: ${e.message}`));
+
+        /* ── Category 90-Day Chart ── */
+        fetch('/api/categories/90d')
+            .then(r => { if (!r.ok) throw new Error(`HTTP ${r.status}`); return r.json(); })
+            .then(data => {
+                const filtered = data.filter(d => d.category !== 'Uncategorized');
+                showChart('loading-cat-90d', 'chartCat90d');
+                buildBarChart(
+                    'chartCat90d',
+                    data.map(d => d.category),
+                    data.map(d => d.job_count),
+                    '#3fb950'
+                );
+            })
+            .catch(e => showError('loading-cat-90d', `Failed to load: ${e.message}`));
+
+        /* ── Category Cumulative Trend ── */
+        fetch('/api/categories/trends')
+            .then(r => { if (!r.ok) throw new Error(`HTTP ${r.status}`); return r.json(); })
+            .then(data => {
+                showChart('loading-cat-trends', 'chartCatTrends');
+
+                const dates = [...new Set(data.map(d => d.date))].sort();
+
+                const catTotals = {};
+                data.forEach(d => {
+                    catTotals[d.category] = (catTotals[d.category] || 0) + d.job_count;
+                });
+
+                const categories = Object.entries(catTotals)
+                    .sort((a, b) => b[1] - a[1])
+                    .filter(entry => entry[0] !== 'Uncategorized')
+                    .map(entry => entry[0]);
+
+                const datasets = categories.map((cat, i) => {
+                    const catData = data.filter(d => d.category === cat);
+                    const countsByDate = {};
+                    catData.forEach(d => { countsByDate[d.date] = d.job_count; });
+
+                    let cumulative = 0;
+                    const cumulativeData = dates.map(date => {
+                        cumulative += countsByDate[date] || 0;
+                        return cumulative;
+                    });
+
+                    return {
+                        label: cat,
+                        data: cumulativeData,
+                        borderColor: COLORS[i % COLORS.length],
+                        backgroundColor: COLORS[i % COLORS.length] + '30',
+                        borderWidth: 2,
+                        pointRadius: 0,
+                        tension: 0.3,
+                        fill: true,
+                    };
+                });
+
+                new Chart(document.getElementById('chartCatTrends'), {
+                    type: 'line',
+                    data: { labels: dates, datasets: datasets },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        interaction: { mode: 'index', intersect: false },
+                        plugins: {
+                            legend: {
+                                position: 'top',
+                                labels: {
+                                    color: '#e0e4ec',
+                                    font: { family: 'IBM Plex Mono', size: isMobile ? 9 : 11 },
+                                    usePointStyle: true,
+                                    pointStyle: 'circle',
+                                    padding: isMobile ? 10 : 20,
+                                },
+                            },
+                            tooltip: {
+                                callbacks: {
+                                    label: function(context) {
+                                        return `${context.dataset.label}: ${context.raw} total postings`;
+                                    }
+                                }
+                            }
+                        },
+                        scales: {
+                            x: {
+                                ticks: { color: '#6b7280', font: { family: 'IBM Plex Mono', size: 11 }, maxRotation: 45, maxTicksLimit: 15 },
+                                grid: { color: '#1e293b' },
+                            },
+                            y: {
+                                ticks: { color: '#6b7280', font: { family: 'IBM Plex Mono', size: 11 } },
+                                grid: { color: '#1e293b' },
+                                beginAtZero: true,
+                            }
+                        }
+                    }
+                });
+            })
+            .catch(e => showError('loading-cat-trends', `Failed to load: ${e.message}`));
     </script>
 </body>
 </html>
