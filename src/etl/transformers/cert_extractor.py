@@ -145,5 +145,6 @@ def extract_certs(jobs: list[dict]) -> list[dict]:
             "max_annual_salary": job.get("max_annual_salary"),
             "description": description,
             "certs_found": found,
+            "job_category": job.get("job_category"),
         })
     return results
