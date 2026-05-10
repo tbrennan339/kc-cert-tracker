@@ -1,3 +1,12 @@
+"""
+List all unique uncategorized job titles from the silver layer.
+
+Scans every silver file in R2 and prints job titles tagged as
+Uncategorized. Use this to identify gaps in categorizer patterns
+and decide which titles to add or confirm as noise.
+
+Usage: python -m scripts.check_uncategorized
+"""
 import json, boto3
 from src.config import Config
 

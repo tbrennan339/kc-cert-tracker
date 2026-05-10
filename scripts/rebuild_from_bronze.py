@@ -1,3 +1,16 @@
+"""
+Rebuild silver and gold layers from existing bronze data.
+
+Re-runs the full pipeline (dedup, categorize, cert extraction,
+aggregation) on all bronze files without making any API calls.
+Use this after updating categorizer patterns, cert regex, or
+fixing pipeline bugs to reprocess all historical data.
+
+Requires truncating seen_jobs, cert_daily_counts, and
+job_category_daily_counts before running.
+
+Usage: python -m scripts.rebuild_from_bronze
+"""
 import json
 import logging
 import boto3
