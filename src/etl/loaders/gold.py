@@ -31,6 +31,24 @@ def aggregate_certs(jobs: list[dict]) -> pd.DataFrame:
     logger.info(f"Aggregated {len(cert_df)} cert counts from {len(jobs)} jobs")
     return cert_df
 
+
+def aggregate_categories(jobs: list[dict]) -> pd.DataFrame:
+    if not jobs:
+        logger.info("No jobs to aggregate")
+        return pd.DataFrame(columns=["category", "job_count", "date"])
+
+    jobs_df = pd.DataFrame(jobs)
+    cat_df = (
+        jobs_df.explode('job_category')
+        .groupby(['job_category', 'date_posted'])
+        .size()
+        .reset_index(name="job_count")
+        .rename(columns={"job_category": "category", "date_posted": "date"})
+    )
+
+    logger.info(f"Aggregated {len(cat_df)} category counts from {len(jobs)} jobs")
+    return cat_df
+
 def load_to_postgres(cert_counts: pd.DataFrame, connection_string: str) -> None:
     conn = psycopg2.connect(connection_string)
 
@@ -46,6 +64,29 @@ def load_to_postgres(cert_counts: pd.DataFrame, connection_string: str) -> None:
 
         conn.commit()
         logger.info(f"Loaded {len(cert_counts)} cert counts to PostgreSQL")
+    except Exception as e:
+        conn.rollback()
+        logger.error(f"Failed to load to PostgreSQL: {e}")
+        raise
+    finally:
+        cur.close()
+        conn.close()
+
+def load_categories_to_postgres(job_category_counts: pd.DataFrame, connection_string: str) -> None:
+    conn = psycopg2.connect(connection_string)
+
+    try:
+        cur = conn.cursor()
+
+        for _, row in job_category_counts.iterrows():
+            cur.execute(
+                """INSERT INTO job_category_daily_counts (category, job_count, date)
+                   VALUES (%s, %s, %s) ON CONFLICT (category, date) DO NOTHING""",
+                (row["category"], row["job_count"], row["date"])
+            )
+
+        conn.commit()
+        logger.info(f"Loaded {len(job_category_counts)} job category counts to PostgreSQL")
     except Exception as e:
         conn.rollback()
         logger.error(f"Failed to load to PostgreSQL: {e}")
