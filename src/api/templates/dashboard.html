@@ -153,96 +153,165 @@
             margin-top: -0.75rem;
             margin-bottom: 1.25rem;
         }
+
+        .tab-nav {
+            display: flex;
+            gap: 0.5rem;
+            margin-bottom: 2rem;
+        }
+
+        .tab {
+            font-family: 'IBM Plex Mono', monospace;
+            font-size: 0.9rem;
+            font-weight: 500;
+            padding: 0.6rem 1.25rem;
+            background: transparent;
+            color: #6b7280;
+            border: 1px solid #1e293b;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .tab:hover { color: #e0e4ec; border-color: #58a6ff; }
+
+        .tab.active {
+            color: #58a6ff;
+            border-color: #58a6ff;
+            background: #58a6ff15;
+        }
+
+        .site-header {
+            margin-bottom: 1.5rem;
+        }
+
+        .site-header h1 {
+            font-family: 'IBM Plex Mono', monospace;
+            font-size: 1.9rem;
+            font-weight: 600;
+            color: #58a6ff;
+            letter-spacing: -0.5px;
+            margin-bottom: 0.5rem;
+        }
+
+        .site-header p {
+            font-size: 0.95rem;
+            color: #6b7280;
+            font-weight: 300;
+            line-height: 1.6;
+            max-width: 680px;
+        }
+
+        .tab-subtitle {
+            font-size: 0.85rem;
+            color: #6b7280;
+            font-weight: 300;
+            margin-bottom: 1.25rem;
+        }
     </style>
 </head>
 <body>
     <div class="container">
-
-        <!-- Cert Section Header -->
-        <div class="header">
+        <!-- Site header — always visible -->
+        <div class="site-header">
             <h1>KC Cert Tracker</h1>
             <p>
-                Tracking which IT certifications appear in
-                <span class="accent">Kansas City metro</span> job postings.
-                Data pulled daily from Indeed and LinkedIn to help you
-                figure out what's actually worth studying for.
+                Daily job market data from Indeed and LinkedIn for the
+                <span class="accent">Kansas City metro</span> IT market.
+                Track which certifications employers are asking for and
+                how hiring trends are shifting across specializations.
             </p>
         </div>
 
-        <!-- Cert bar charts row -->
-        <div class="bar-grid">
-            <div class="card" id="card-7d">
-                <div class="card-title"><span class="dot dot-blue"></span>Last 7 Days</div>
-                <div class="bar-chart-container">
-                    <div class="loading-state" id="loading-7d">
+        <!-- Tab nav -->
+        <div class="tab-nav">
+            <button class="tab active" onclick="showTab('certs')">Certifications</button>
+            <button class="tab" onclick="showTab('categories')">Job Market</button>
+        </div>
+
+        <!-- Certs tab -->
+        <div id="tab-certs">
+            <p class="tab-subtitle">
+                Every job description is scanned for mentions of 80+ IT certifications
+                using pattern matching. The bar charts show rolling counts — the trend
+                chart shows cumulative mentions over time, so a steeper line means
+                faster growing demand.
+            </p>
+
+            <div class="bar-grid">
+                <div class="card" id="card-7d">
+                    <div class="card-title"><span class="dot dot-blue"></span>Last 7 Days</div>
+                    <div class="bar-chart-container">
+                        <div class="loading-state" id="loading-7d">
+                            <div class="spinner"></div> Loading...
+                        </div>
+                        <canvas id="chart7d" style="display:none;"></canvas>
+                    </div>
+                </div>
+                <div class="card" id="card-30d">
+                    <div class="card-title"><span class="dot dot-green"></span>Last 30 Days</div>
+                    <div class="bar-chart-container">
+                        <div class="loading-state" id="loading-30d">
+                            <div class="spinner"></div> Loading...
+                        </div>
+                        <canvas id="chart30d" style="display:none;"></canvas>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card trend-card">
+                <div class="card-title"><span class="dot dot-purple"></span>Cert Trends</div>
+                <p class="card-subtitle">Top 5 certs — cumulative mentions since Jan 1, 2026. Click legend to toggle.</p>
+                <div class="trend-chart-container">
+                    <div class="loading-state" id="loading-trends">
                         <div class="spinner"></div> Loading...
                     </div>
-                    <canvas id="chart7d" style="display:none;"></canvas>
+                    <canvas id="chartTrends" style="display:none;"></canvas>
                 </div>
             </div>
-            <div class="card" id="card-30d">
-                <div class="card-title"><span class="dot dot-green"></span>Last 30 Days</div>
-                <div class="bar-chart-container">
-                    <div class="loading-state" id="loading-30d">
+        </div>
+
+        <!-- Categories tab -->
+        <div id="tab-categories" style="display:none;">
+            <p class="tab-subtitle">
+                Each job is categorized by title into IT specializations like Help Desk,
+                Security, and Cloud. The bar charts show how many postings appeared in
+                each category — the trend chart tracks cumulative postings over time,
+                so you can see which areas of IT are growing fastest in KC.
+            </p>
+
+            <div class="bar-grid">
+                <div class="card" id="card-cat-30d">
+                    <div class="card-title"><span class="dot dot-blue"></span>Last 30 Days</div>
+                    <div class="bar-chart-container">
+                        <div class="loading-state" id="loading-cat-30d">
+                            <div class="spinner"></div> Loading...
+                        </div>
+                        <canvas id="chartCat30d" style="display:none;"></canvas>
+                    </div>
+                </div>
+                <div class="card" id="card-cat-90d">
+                    <div class="card-title"><span class="dot dot-green"></span>Last 90 Days</div>
+                    <div class="bar-chart-container">
+                        <div class="loading-state" id="loading-cat-90d">
+                            <div class="spinner"></div> Loading...
+                        </div>
+                        <canvas id="chartCat90d" style="display:none;"></canvas>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card trend-card">
+                <div class="card-title"><span class="dot dot-purple"></span>Category Trends</div>
+                <p class="card-subtitle">Cumulative job postings by category since Jan 1, 2026. Click legend to toggle.</p>
+                <div class="trend-chart-container">
+                    <div class="loading-state" id="loading-cat-trends">
                         <div class="spinner"></div> Loading...
                     </div>
-                    <canvas id="chart30d" style="display:none;"></canvas>
+                    <canvas id="chartCatTrends" style="display:none;"></canvas>
                 </div>
             </div>
         </div>
-
-        <!-- Cert Trend chart -->
-        <div class="card trend-card">
-            <div class="card-title"><span class="dot dot-purple"></span>Cert Trends</div>
-            <p class="card-subtitle">Top 5 certs — cumulative mentions since Jan 1, 2026. Click legend to toggle.</p>
-            <div class="trend-chart-container">
-                <div class="loading-state" id="loading-trends">
-                    <div class="spinner"></div> Loading...
-                </div>
-                <canvas id="chartTrends" style="display:none;"></canvas>
-            </div>
-        </div>
-
-        <!-- Category Section Header -->
-        <div class="header" style="margin-top: 2.5rem;">
-            <h1>Job Market by Category</h1>
-            <p>How many IT jobs are being posted by specialization in the <span class="accent">Kansas City metro</span>.</p>
-        </div>
-
-        <!-- Category bar charts row -->
-        <div class="bar-grid">
-            <div class="card" id="card-cat-30d">
-                <div class="card-title"><span class="dot dot-blue"></span>Last 30 Days</div>
-                <div class="bar-chart-container">
-                    <div class="loading-state" id="loading-cat-30d">
-                        <div class="spinner"></div> Loading...
-                    </div>
-                    <canvas id="chartCat30d" style="display:none;"></canvas>
-                </div>
-            </div>
-            <div class="card" id="card-cat-90d">
-                <div class="card-title"><span class="dot dot-green"></span>Last 90 Days</div>
-                <div class="bar-chart-container">
-                    <div class="loading-state" id="loading-cat-90d">
-                        <div class="spinner"></div> Loading...
-                    </div>
-                    <canvas id="chartCat90d" style="display:none;"></canvas>
-                </div>
-            </div>
-        </div>
-
-        <!-- Category trend chart -->
-        <div class="card trend-card">
-            <div class="card-title"><span class="dot dot-purple"></span>Category Trends</div>
-            <p class="card-subtitle">Cumulative job postings by category since Jan 1, 2026. Click legend to toggle.</p>
-            <div class="trend-chart-container">
-                <div class="loading-state" id="loading-cat-trends">
-                    <div class="spinner"></div> Loading...
-                </div>
-                <canvas id="chartCatTrends" style="display:none;"></canvas>
-            </div>
-        </div>
-
     </div>
 
     <script>
@@ -260,6 +329,13 @@
             el.innerHTML = `<span class="error-state">${message}</span>`;
         }
 
+        function showTab(tab) {
+            document.getElementById('tab-certs').style.display = tab === 'certs' ? 'block' : 'none';
+            document.getElementById('tab-categories').style.display = tab === 'categories' ? 'block' : 'none';
+            document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+            event.target.classList.add('active');
+        }
+
         const SHORT_NAMES = {
             'CompTIA Security+': 'Sec+',
             'CompTIA Network+': 'Net+',
@@ -272,6 +348,16 @@
             'CompTIA PenTest+': 'PenTest+',
             'CompTIA Server+': 'Server+',
         };
+
+        const SHORT_CAT_NAMES = {
+            'Help Desk & Desktop Support': 'Help Desk',
+            'Systems Administration': 'Sys Admin',
+            'DevOps & SRE': 'DevOps',
+        };
+
+        function shortenCat(name) {
+            return SHORT_CAT_NAMES[name] || name;
+        }
 
         const isMobile = window.innerWidth <= 768;
 
@@ -458,8 +544,8 @@
                 showChart('loading-cat-30d', 'chartCat30d');
                 buildBarChart(
                     'chartCat30d',
-                    data.map(d => d.category),
-                    data.map(d => d.job_count),
+                    filtered.map(d => shortenCat(d.category)),
+                    filtered.map(d => d.job_count),
                     '#58a6ff'
                 );
             })
@@ -473,8 +559,8 @@
                 showChart('loading-cat-90d', 'chartCat90d');
                 buildBarChart(
                     'chartCat90d',
-                    data.map(d => d.category),
-                    data.map(d => d.job_count),
+                    filtered.map(d => shortenCat(d.category)),
+                    filtered.map(d => d.job_count),
                     '#3fb950'
                 );
             })
