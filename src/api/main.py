@@ -5,7 +5,7 @@ from fastapi.templating import Jinja2Templates
 from starlette.requests import Request
 import psycopg2
 
-from src.api.db.queries import get_certs_last_7_days, get_certs_last_30_days, get_cert_trends
+from src.api.db.queries import get_certs_last_7_days, get_certs_last_30_days, get_cert_trends, get_category_counts_30d
 from src.config import Config
 import sentry_sdk
 
@@ -53,6 +53,39 @@ def get_certs_trends_route():
     try:
         rows = get_cert_trends(conn)
         return [{"date": str(row[0]), "cert_name": row[1], "job_count": row[2]} for row in rows]
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+    finally:
+        conn.close()
+
+@app.get("/api/categories/30d")
+def get_categories_30d():
+    conn = get_connection()
+    try:
+        rows = get_category_counts_30d(conn)
+        return [{"category": row[0], "job_count": row[1]} for row in rows]
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+    finally:
+        conn.close()
+
+@app.get("/api/categories/90d")
+def get_categories_90d():
+    conn = get_connection()
+    try:
+        rows = get_category_counts_90d(conn)
+        return [{"category": row[0], "job_count": row[1]} for row in rows]
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+    finally:
+        conn.close()
+
+@app.get("/api/categories/trends")
+def get_categories_trends():
+    conn = get_connection()
+    try:
+        rows = get_category_trends(conn)
+        return [{"date": str(row[0]), "category": row[1], "job_count": row[2]} for row in rows]
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
     finally:

@@ -53,3 +53,40 @@ def get_cert_trends(conn):
         raise
     finally:
         cur.close()
+
+def get_category_counts_30d(conn):
+    cur = conn.cursor()
+    cur.execute("""
+        SELECT category, SUM(job_count) as total
+        FROM job_category_daily_counts
+        WHERE date >= CURRENT_DATE - INTERVAL '30 days'
+        GROUP BY category
+        ORDER BY total DESC
+    """)
+    rows = cur.fetchall()
+    cur.close()
+    return rows
+
+def get_category_counts_90d(conn):
+    cur = conn.cursor()
+    cur.execute("""
+        SELECT category, SUM(job_count) as total
+        FROM job_category_daily_counts
+        WHERE date >= CURRENT_DATE - INTERVAL '90 days'
+        GROUP BY category
+        ORDER BY total DESC
+    """)
+    rows = cur.fetchall()
+    cur.close()
+    return rows
+
+def get_category_trends(conn):
+    cur = conn.cursor()
+    cur.execute("""
+        SELECT date, category, job_count
+        FROM job_category_daily_counts
+        ORDER BY date
+    """)
+    rows = cur.fetchall()
+    cur.close()
+    return rows
