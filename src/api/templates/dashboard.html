@@ -350,7 +350,6 @@
         };
 
         const SHORT_CAT_NAMES = {
-            'Help Desk & Desktop Support': 'Help Desk',
             'Systems Administration': 'Sys Admin',
             'DevOps & SRE': 'DevOps',
         };
@@ -398,6 +397,16 @@
                                 color: '#e0e4ec',
                                 font: { family: 'IBM Plex Mono', size: isMobile ? 10 : 12 },
                                 padding: isMobile ? 4 : 8,
+                                callback: function(value) {
+                                    const label = this.getLabelForValue(value);
+                                    if (label.length > 20) {
+                                        const mid = label.lastIndexOf(' ', 20);
+                                        if (mid > 0) {
+                                            return [label.slice(0, mid), label.slice(mid + 1)];
+                                        }
+                                    }
+                                    return label;
+                                }
                             },
                             grid: {
                                 display: true,

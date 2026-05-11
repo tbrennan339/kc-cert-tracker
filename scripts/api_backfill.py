@@ -1,3 +1,14 @@
+"""
+Pull historical job postings from the TheirStack API.
+
+Fetches job data for a configurable date range, saves raw responses
+to the bronze layer (R2), deduplicates, extracts certs, and loads
+to silver (R2) and gold (PostgreSQL). Includes a circuit breaker
+that stops after 3 consecutive API failures.
+
+Usage: python -m scripts.api_backfill
+"""
+
 import time
 import boto3
 from src.etl.extractors.theirstack import extract_jobs

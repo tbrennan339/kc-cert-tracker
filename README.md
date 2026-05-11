@@ -16,14 +16,15 @@ Job Board APIs (TheirStack)
         │
         │  Scheduled daily via GitHub Actions
         ▼
-┌─────────────────────────────┐
-│       ETL Pipeline          │
-│                             │
-│  Extract → Deduplicate →    │
-│  Extract Certs → Aggregate  │
-└──────┬──────────┬───────────┘
-       │          │
-       ▼          ▼
+┌─────────────────────────────────────┐
+│           ETL Pipeline              │
+│                                     │
+│  Extract → Deduplicate →            │
+│  Categorize → Extract Certs →       │
+│  Aggregate                          │
+└──────┬──────────────┬───────────────┘
+       │              │
+       ▼              ▼
  Cloudflare R2   Neon PostgreSQL
  (Data Lake)     (Gold Layer)
        │                │
@@ -47,7 +48,7 @@ Job Board APIs (TheirStack)
 |-------|---------|--------|----------|
 | **Bronze** | Cloudflare R2 | JSON | Raw API responses, unmodified |
 | **Silver** | Cloudflare R2 | JSON | Deduplicated jobs with extracted certifications |
-| **Gold** | Neon PostgreSQL | Tables | Aggregated daily cert counts for dashboard queries |
+| **Gold** | Neon PostgreSQL | Tables | Daily cert counts + job category counts |
 
 ---
 
@@ -84,9 +85,19 @@ Regex pattern matching against 80+ certifications across CompTIA, Cisco, ISC2, I
 
 ## Dashboard
 
-- **7-Day & 30-Day Views** — Rolling bar charts showing which certs are most in-demand right now
-- **Cumulative Trends** — Area chart tracking the top 5 certs over time, showing demand growth since data collection began
-- **Interactive** — Click legend labels to toggle individual certs on the trend chart
+## Dashboard
+
+Tab-based interface with two views:
+
+**Certifications** — Which certs are employers asking for?
+- 7-day and 30-day rolling bar charts of cert mentions
+- Cumulative trend chart tracking top 5 certs over time
+
+**Job Market** — Which IT specializations are hiring?
+- 30-day and 90-day bar charts by job category
+- Cumulative trend chart tracking hiring by specialization
+
+Categories: Help Desk & Desktop Support, Systems Administration, Networking, Security, Cloud, DevOps & SRE
 
 ---
 
@@ -150,14 +161,18 @@ kc-cert-tracker/
 │   │   ├── extractors/
 │   │   │   └── theirstack.py    # Job posting API client
 │   │   ├── transformers/
-│   │   │   ├── cert_extractor.py # Regex cert extraction
-│   │   │   └── dedup.py         # Description fingerprinting
+│   │   │   ├── cert_extractor.py    # Regex cert extraction
+│   │   │   ├── dedup.py             # Description fingerprinting
+│   │   │   └── categorizer.py       # Job title categorization
 │   │   └── loaders/
 │   │       ├── gold.py          # Aggregation + PostgreSQL loader
 │   │       └── storage.py       # Cloudflare R2 uploader
 │   └── config.py                # Centralized env configuration
 ├── scripts/
-│   └── backfill.py              # Historical data backfill
+│   ├── api_backfill.py              # Historical data pull from TheirStack API
+│   ├── rebuild_from_bronze.py       # Re-run pipeline from bronze (no API calls)
+│   ├── check_uncategorized.py       # List uncategorized job titles
+│   └── lookup_job.py               # CLI to search job descriptions by date/title
 ├── infrastructure/
 │   └── docker/
 │       └── docker-compose.yml   # Local dev services
